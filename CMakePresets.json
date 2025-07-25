@@ -1,0 +1,41 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 26,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default-vcpkg",
+      "displayName": "Default (con vcpkg)",
+      "description": "Preset para usar vcpkg como toolchain.",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/External/Source/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_PREFIX_PATH": "${sourceDir}/External/Source/vcpkg_installed/x64-windows"
+      },
+      "environment": {
+        "VCPKG_ROOT": "${sourceDir}/External/Source/vcpkg"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug-vcpkg",
+      "displayName": "Build Debug (con vcpkg)",
+      "description": "Compila en modo Debug usando vcpkg.",
+      "configurePreset": "default-vcpkg",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-vcpkg",
+      "displayName": "Build Release (con vcpkg)",
+      "description": "Compila en modo Release usando vcpkg.",
+      "configurePreset": "default-vcpkg",
+      "configuration": "Release"
+    }
+  ]
+}

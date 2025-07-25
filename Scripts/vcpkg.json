@@ -1,0 +1,11 @@
+{
+  "name": "vulkan-engine",
+  "version-string": "0.0.1",
+  "description": "",
+  "dependencies": [
+    "glfw3",
+    "glm",
+    "tinyobjloader",
+    "stb"
+  ]
+}
