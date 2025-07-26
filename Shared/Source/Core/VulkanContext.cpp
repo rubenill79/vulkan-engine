@@ -8,7 +8,8 @@ namespace VulkanEngine
 
     void VulkanContext::run()
     {
-        while (!window.shouldClose()) {
+        while (!window.shouldClose())
+        {
             glfwPollEvents();
         }
     }

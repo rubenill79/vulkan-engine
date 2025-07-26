@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanWindow.hpp"
+#include "VulkanDevice.hpp"
 
 namespace VulkanEngine
 {
@@ -20,5 +21,6 @@ namespace VulkanEngine
 
     private:
         VulkanWindow window{width, height, "Hello World!"};
+        VulkanDevice device{window};
     };
 }
