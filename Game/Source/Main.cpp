@@ -1,4 +1,4 @@
-#include "Core/App.cpp"
+#include "Core/VulkanContext.hpp"
 
 // std
 #include <cstdlib>
@@ -7,7 +7,7 @@
 
 int main()
 {
-    App app;
+    VulkanEngine::VulkanContext app;
     try
     {
         app.run();
