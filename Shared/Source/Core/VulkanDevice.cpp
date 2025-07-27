@@ -22,6 +22,7 @@ namespace VulkanEngine
         createInstance();
         setupDebugMessenger();
         pickPhysicalDevice();
+        createLogicalDevice();
     }
 
     VulkanDevice::~VulkanDevice()
@@ -151,6 +152,38 @@ namespace VulkanEngine
                                         features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
 
         return supportsVulkan1_3 && supportsGraphics && supportsAllRequiredExtensions && supportsRequiredFeatures;
+    }
+
+    void VulkanDevice::createLogicalDevice()
+    {
+        // Find the index of the first queue family that supports graphics
+        std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+
+        // Get the first index into queueFamilyProperties which supports graphics
+        auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamilyProperties, [](auto const &qfp)
+                                                                { return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0); });
+        assert(graphicsQueueFamilyProperty != queueFamilyProperties.end() && "No graphics queue family found!");
+
+        auto graphicsIndex = static_cast<uint32_t>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
+
+        // Query for Vulkan 1.3 features
+        vk::StructureChain<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT> featureChain = {
+            {},                            // vk::PhysicalDeviceFeatures2
+            {.dynamicRendering = true},    // vk::PhysicalDeviceVulkan13Features
+            {.extendedDynamicState = true} // vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT
+        };
+
+        // Create a Device
+        float queuePriority = 0.0f;
+        vk::DeviceQueueCreateInfo deviceQueueCreateInfo{.queueFamilyIndex = graphicsIndex, .queueCount = 1, .pQueuePriorities = &queuePriority};
+        vk::DeviceCreateInfo deviceCreateInfo{.pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
+                                              .queueCreateInfoCount = 1,
+                                              .pQueueCreateInfos = &deviceQueueCreateInfo,
+                                              .enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtension.size()),
+                                              .ppEnabledExtensionNames = requiredDeviceExtension.data()};
+
+        device = vk::raii::Device(physicalDevice, deviceCreateInfo);
+        graphicsQueue = vk::raii::Queue(device, graphicsIndex, 0);
     }
 
     std::vector<const char *> VulkanDevice::getRequiredExtensions()

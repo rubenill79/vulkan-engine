@@ -2,6 +2,7 @@
 
 #include "VulkanWindow.hpp"
 
+#include <assert.h>
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -36,6 +37,7 @@ namespace VulkanEngine
         void createInstance();
         void setupDebugMessenger();
         void pickPhysicalDevice();
+        void createLogicalDevice();
 
         // Helper functions
         bool isDeviceSuitable(vk::raii::PhysicalDevice device);
@@ -47,6 +49,9 @@ namespace VulkanEngine
         vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
         vk::raii::PhysicalDevice physicalDevice = nullptr;
+        vk::raii::Device device = nullptr;
+
+        vk::raii::Queue graphicsQueue = nullptr;
 
         VulkanWindow &window;
 
