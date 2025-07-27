@@ -2,6 +2,7 @@
 
 #include "VulkanWindow.hpp"
 #include "VulkanDevice.hpp"
+#include "VulkanRenderer.hpp"
 
 namespace VulkanEngine
 {
@@ -22,5 +23,6 @@ namespace VulkanEngine
     private:
         VulkanWindow window{width, height, "Hello World!"};
         VulkanDevice device{window};
+        VulkanRenderer renderer{window, device};
     };
 }

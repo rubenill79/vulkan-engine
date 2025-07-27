@@ -1,19 +1,13 @@
 #pragma once
 
-#include "VulkanWindow.hpp"
-
 #include <assert.h>
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
-#include <vector>
-#include <memory>
 
-#ifdef __INTELLISENSE__
-#include <vulkan/vulkan_raii.hpp>
-#else
-import vulkan_hpp;
-#endif
+#include "Utils/VulkanRAII.hpp"
+
+#include "VulkanWindow.hpp"
 
 namespace VulkanEngine
 {
@@ -32,6 +26,10 @@ namespace VulkanEngine
         VulkanDevice &operator=(const VulkanDevice &) = delete;
         VulkanDevice(VulkanDevice &&) = delete;
         VulkanDevice &operator=(VulkanDevice &&) = delete;
+
+        const vk::raii::Device& getDevice() const { return device; }
+        const vk::raii::SurfaceKHR& getSurface() const { return surface; }
+        const vk::raii::PhysicalDevice& getPhysicalDevice() const { return physicalDevice; }
 
     private:
         void createInstance();
