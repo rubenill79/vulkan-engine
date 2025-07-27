@@ -36,6 +36,7 @@ namespace VulkanEngine
     private:
         void createInstance();
         void setupDebugMessenger();
+        void createSurface();
         void pickPhysicalDevice();
         void createLogicalDevice();
 
@@ -50,8 +51,9 @@ namespace VulkanEngine
 
         vk::raii::PhysicalDevice physicalDevice = nullptr;
         vk::raii::Device device = nullptr;
-
+        vk::raii::SurfaceKHR surface = nullptr;
         vk::raii::Queue graphicsQueue = nullptr;
+        vk::raii::Queue presentQueue = nullptr;
 
         VulkanWindow &window;
 

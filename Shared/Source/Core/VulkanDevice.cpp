@@ -21,6 +21,7 @@ namespace VulkanEngine
     {
         createInstance();
         setupDebugMessenger();
+        createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
     }
@@ -94,6 +95,16 @@ namespace VulkanEngine
         debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
     }
 
+    void VulkanDevice::createSurface()
+    {
+        VkSurfaceKHR _surface;
+        if (glfwCreateWindowSurface(*instance, window.getGLFWWindow(), nullptr, &_surface) != 0)
+        {
+            throw std::runtime_error("Failed to create window surface!");
+        }
+        surface = vk::raii::SurfaceKHR(instance, _surface);
+    }
+
     void VulkanDevice::pickPhysicalDevice()
     {
         std::vector<vk::raii::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
@@ -162,9 +173,42 @@ namespace VulkanEngine
         // Get the first index into queueFamilyProperties which supports graphics
         auto graphicsQueueFamilyProperty = std::ranges::find_if(queueFamilyProperties, [](auto const &qfp)
                                                                 { return (qfp.queueFlags & vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0); });
-        assert(graphicsQueueFamilyProperty != queueFamilyProperties.end() && "No graphics queue family found!");
 
         auto graphicsIndex = static_cast<uint32_t>(std::distance(queueFamilyProperties.begin(), graphicsQueueFamilyProperty));
+
+        // Determine a queueFamilyIndex that supports present
+        // First check if the graphicsIndex is good enough
+        auto presentIndex = physicalDevice.getSurfaceSupportKHR(graphicsIndex, *surface) ? graphicsIndex : ~0;
+        if (presentIndex == queueFamilyProperties.size())
+        {
+            // The graphicsIndex doesn't support present -> look for another family index that supports both graphics and present
+            for (size_t i = 0; i < queueFamilyProperties.size(); i++)
+            {
+                if ((queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics) &&
+                    physicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), *surface))
+                {
+                    graphicsIndex = static_cast<uint32_t>(i);
+                    presentIndex = graphicsIndex;
+                    break;
+                }
+            }
+            if (presentIndex == queueFamilyProperties.size())
+            {
+                // There's nothing like a single family index that supports both graphics and present -> look for another family index that supports present
+                for (size_t i = 0; i < queueFamilyProperties.size(); i++)
+                {
+                    if (physicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), *surface))
+                    {
+                        presentIndex = static_cast<uint32_t>(i);
+                        break;
+                    }
+                }
+            }
+        }
+        if ((graphicsIndex == queueFamilyProperties.size()) || (presentIndex == queueFamilyProperties.size()))
+        {
+            throw std::runtime_error("Could not find a queue for graphics or present -> terminating");
+        }
 
         // Query for Vulkan 1.3 features
         vk::StructureChain<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT> featureChain = {
@@ -184,6 +228,7 @@ namespace VulkanEngine
 
         device = vk::raii::Device(physicalDevice, deviceCreateInfo);
         graphicsQueue = vk::raii::Queue(device, graphicsIndex, 0);
+        presentQueue = vk::raii::Queue(device, presentIndex, 0);
     }
 
     std::vector<const char *> VulkanDevice::getRequiredExtensions()

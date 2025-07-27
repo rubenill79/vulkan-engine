@@ -17,6 +17,7 @@ namespace VulkanEngine
         VulkanWindow &operator=(const VulkanWindow &) = delete;
 
         bool shouldClose() { return glfwWindowShouldClose(window); };
+        GLFWwindow* getGLFWWindow() const { return window; }
 
     private:
         void initWindow();
