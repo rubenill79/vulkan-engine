@@ -35,15 +35,22 @@ namespace VulkanEngine
     private:
         void createInstance();
         void setupDebugMessenger();
+        void pickPhysicalDevice();
 
-        std::vector<const char*> getRequiredExtensions();
+        // Helper functions
+        bool isDeviceSuitable(vk::raii::PhysicalDevice device);
+
+        std::vector<const char *> getRequiredExtensions();
 
         vk::raii::Context context;
         vk::raii::Instance instance = nullptr;
         vk::raii::DebugUtilsMessengerEXT debugMessenger = nullptr;
 
+        vk::raii::PhysicalDevice physicalDevice = nullptr;
+
         VulkanWindow &window;
 
         const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+        const std::vector<const char *> requiredDeviceExtension = {vk::KHRSwapchainExtensionName, vk::KHRSpirv14ExtensionName, vk::KHRSynchronization2ExtensionName, vk::KHRCreateRenderpass2ExtensionName};
     };
 }

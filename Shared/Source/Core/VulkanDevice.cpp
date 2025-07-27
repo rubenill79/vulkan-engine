@@ -21,6 +21,7 @@ namespace VulkanEngine
     {
         createInstance();
         setupDebugMessenger();
+        pickPhysicalDevice();
     }
 
     VulkanDevice::~VulkanDevice()
@@ -90,6 +91,66 @@ namespace VulkanEngine
             .messageType = messageTypeFlags,
             .pfnUserCallback = &debugCallback};
         debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
+    }
+
+    void VulkanDevice::pickPhysicalDevice()
+    {
+        std::vector<vk::raii::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
+        auto devIter = std::ranges::find_if(
+            devices,
+            [&](auto const &device)
+            {
+                bool isDiscrete = device.getProperties().deviceType == vk::PhysicalDeviceType::eDiscreteGpu;
+                return isDiscrete && isDeviceSuitable(device);
+            });
+        if (devIter == devices.end())
+        {
+            devIter = std::ranges::find_if(
+                devices,
+                [&](auto const &device)
+                {
+                    return isDeviceSuitable(device);
+                });
+        }
+        if (devIter != devices.end())
+        {
+            physicalDevice = *devIter;
+            // Show the name of the selected device
+            std::cout << "Selected physical device: " << physicalDevice.getProperties().deviceName << std::endl;
+        }
+        else
+        {
+            throw std::runtime_error("Failed to find a suitable GPU!");
+        }
+    }
+
+    bool VulkanDevice::isDeviceSuitable(vk::raii::PhysicalDevice device)
+    {
+        // Check if the device supports the Vulkan 1.3 API version
+        bool supportsVulkan1_3 = device.getProperties().apiVersion >= VK_API_VERSION_1_3;
+
+        // Check if any of the queue families support graphics operations
+        auto queueFamilies = device.getQueueFamilyProperties();
+        bool supportsGraphics =
+            std::ranges::any_of(queueFamilies, [](auto const &qfp)
+                                { return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics); });
+
+        // Check if all required device extensions are available
+        auto availableDeviceExtensions = device.enumerateDeviceExtensionProperties();
+        bool supportsAllRequiredExtensions =
+            std::ranges::all_of(requiredDeviceExtension,
+                                [&availableDeviceExtensions](auto const &requiredDeviceExtension)
+                                {
+                                    return std::ranges::any_of(availableDeviceExtensions,
+                                                               [requiredDeviceExtension](auto const &availableDeviceExtension)
+                                                               { return strcmp(availableDeviceExtension.extensionName, requiredDeviceExtension) == 0; });
+                                });
+
+        auto features = device.template getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+        bool supportsRequiredFeatures = features.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
+                                        features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+
+        return supportsVulkan1_3 && supportsGraphics && supportsAllRequiredExtensions && supportsRequiredFeatures;
     }
 
     std::vector<const char *> VulkanDevice::getRequiredExtensions()
